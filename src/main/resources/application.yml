@@ -1,0 +1,95 @@
+server:
+  port: 8080
+  # PRODUCTION NOTE: In a bank this would sit behind an API Gateway
+  # (Kong, AWS API Gateway) and the internal port would not be directly
+  # exposed. TLS termination happens at the gateway or load balancer.
+
+spring:
+  application:
+    name: banking-api
+
+  datasource:
+    # DECISION: H2 in-memory with PostgreSQL compatibility mode
+    # WHY: MODE=PostgreSQL makes H2 behave closer to production DB.
+    # Catches SQL that works in H2 but would fail in PostgreSQL.
+    # DB_CLOSE_DELAY=-1 keeps the DB alive for the JVM lifetime.
+    url: jdbc:h2:mem:bankingdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+
+  h2:
+    console:
+      # DECISION: H2 console enabled for development inspection only.
+      # PRODUCTION DIFFERENCE: This would NEVER be enabled in production.
+      # It is a direct database access backdoor.
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: false  # Only localhost access
+
+  jpa:
+    # DECISION: validate (not create-drop or update)
+    # WHY: 'validate' checks the schema matches your entities on startup.
+    # 'create-drop' drops everything on restart — dangerous habit to form.
+    # PRODUCTION DIFFERENCE: Schema managed by Flyway migrations entirely.
+    # Spring would use 'validate' against Flyway-managed schema.
+    hibernate:
+      ddl-auto: create-drop
+      # NOTE: create-drop used here because H2 is in-memory so it
+      # resets anyway. Using 'validate' against H2 would require
+      # providing schema.sql which adds complexity for a take-home.
+    show-sql: false
+    # DECISION: show-sql false even in dev.
+    # WHY: Teaches the habit. SQL logging should go through a proper
+    # logging framework with log levels, not stdout.
+    properties:
+      hibernate:
+        format_sql: true
+        # PostgreSQL dialect even though we use H2 — works with
+        # H2's PostgreSQL compatibility mode
+        dialect: org.hibernate.dialect.H2Dialect
+        # DECISION: Explicit naming strategy
+        # WHY: By default Hibernate converts camelCase to snake_case.
+        # Being explicit makes the schema predictable and reviewable.
+        physical_naming_strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
+
+  jackson:
+    # DECISION: snake_case in JSON responses
+    # WHY: REST API convention. Java uses camelCase internally,
+    # but JSON consumers (JavaScript etc.) typically expect snake_case.
+    # This mapping is automatic — no manual field renaming needed.
+    property-naming-strategy: SNAKE_CASE
+    # Never serialise null fields — cleaner API responses
+    default-property-inclusion: non_null
+    serialization:
+      # ISO-8601 timestamps, not Unix epoch numbers
+      write-dates-as-timestamps: false
+
+# ==================== APPLICATION PROPERTIES ====================
+
+app:
+  jwt:
+    # DECISION: Secret stored in application config for take-home exercise.
+    # PRODUCTION DIFFERENCE: This MUST come from a secrets manager
+    # (HashiCorp Vault, AWS Secrets Manager, Azure Key Vault).
+    # Never commit a real JWT secret to source control.
+    # This is a 512-bit (64 byte) base64-encoded key — minimum for HS512.
+    secret: "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970"
+    # DECISION: 1 hour expiry for take-home.
+    # PRODUCTION DIFFERENCE: Access tokens typically 15 minutes.
+    # Pair with refresh tokens (stored server-side or in HttpOnly cookie)
+    # for seamless re-authentication.
+    expiration-ms: 3600000  # 1 hour in milliseconds
+
+# ==================== LOGGING ====================
+
+logging:
+  level:
+    root: INFO
+    com.bank.api: DEBUG
+    # PRODUCTION NOTE: In production you'd ship structured JSON logs
+    # to a centralised platform (Splunk, Elastic, Datadog).
+    # Never log sensitive data (account numbers, amounts in some jurisdictions,
+    # PII) — regulated by GDPR and FCA in the UK.
+    org.springframework.security: DEBUG  # Remove in production
