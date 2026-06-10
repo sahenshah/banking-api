@@ -11,6 +11,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import com.bank.api.exception.AccessDeniedException;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -120,15 +121,9 @@ public class GlobalExceptionHandler {
             AccessDeniedException ex,
             HttpServletRequest request
     ) {
-        // SECURITY NOTE: Return 404 not 403 for ownership violations.
-        // WHY: Returning 403 confirms the resource EXISTS but the user
-        // can't access it. An attacker can use this to enumerate resource IDs.
-        // Returning 404 reveals nothing about whether the resource exists.
-        // This is called "security through ambiguity" and is standard practice
-        // for financial APIs.
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorBody(
-                HttpStatus.NOT_FOUND,
-                "Resource not found",
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorBody(
+                HttpStatus.FORBIDDEN,
+                "Access denied",
                 request.getRequestURI(),
                 null
         ));

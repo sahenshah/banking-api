@@ -15,6 +15,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import java.util.UUID;
+
 @SpringBootTest
 @AutoConfigureMockMvc
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
@@ -29,7 +31,7 @@ class AuthControllerIntegrationTest {
 
     private static final String REGISTER_URL = "/v1/auth/register";
     private static final String LOGIN_URL = "/v1/auth/login";
-    private static final String ME_URL = "/v1/users/me";
+    private static final String ME_URL = "/v1/users";
 
     @Test
     @DisplayName("POST /auth/register with valid details should return 201 and a token")
@@ -166,23 +168,24 @@ class AuthControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("GET /users/me without token should return 401")
+    @DisplayName("GET /users/{userId} without token should return 401")
     void getMe_noToken_returns401() throws Exception {
-        mockMvc.perform(get(ME_URL))
+        mockMvc.perform(get("/v1/users/" + UUID.randomUUID()))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
-    @DisplayName("GET /users/me with valid token should return user profile")
+    @DisplayName("GET /users/{userId} with valid token should return user profile")
     void getMe_validToken_returnsUserProfile() throws Exception {
         String registerBody = """
-                {
-                    "first_name": "John",
-                    "last_name": "Doe",
-                    "email": "john@example.com",
-                    "password": "password123"
-                }
-                """;
+            {
+                "first_name": "John",
+                "last_name": "Doe",
+                "email": "john@example.com",
+                "password": "password123"
+            }
+            """;
+
         MvcResult registerResult = mockMvc.perform(post(REGISTER_URL)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(registerBody))
@@ -191,7 +194,12 @@ class AuthControllerIntegrationTest {
         String responseJson = registerResult.getResponse().getContentAsString();
         String token = objectMapper.readTree(responseJson).get("token").asText();
 
-        mockMvc.perform(get(ME_URL)
+        // Extract userId from JWT subject claim
+        String[] parts = token.split("\\.");
+        String payload = new String(java.util.Base64.getUrlDecoder().decode(parts[1]));
+        String userId = objectMapper.readTree(payload).get("sub").asText();
+
+        mockMvc.perform(get("/v1/users/" + userId)
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value("john@example.com"))
