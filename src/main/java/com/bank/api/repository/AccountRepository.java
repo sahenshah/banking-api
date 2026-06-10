@@ -42,4 +42,10 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
      * Checks if an account number is already taken.
      */
     boolean existsByAccountNumber(String accountNumber);
+
+    /**
+     * Finds an account by ID regardless of owner.
+     * Used to distinguish 404 (not found) from 403 (found but forbidden).
+     */
+    Optional<Account> findById(UUID id);
 }
