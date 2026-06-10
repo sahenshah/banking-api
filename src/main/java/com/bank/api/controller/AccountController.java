@@ -28,7 +28,7 @@ import java.util.UUID;
  *    be redundant and create an IDOR surface — client could pass any userId.
  */
 @RestController
-@RequestMapping("/api/v1/accounts")
+@RequestMapping("/v1/accounts")
 public class AccountController {
 
     private final AccountService accountService;

@@ -44,11 +44,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public auth endpoints
                         .requestMatchers(
-                                new AntPathRequestMatcher("/api/v1/auth/**")
+                                new AntPathRequestMatcher("/v1/auth/**")
                         ).permitAll()
                         // Public user registration
                         .requestMatchers(
-                                new AntPathRequestMatcher("/api/v1/users", "POST")
+                                new AntPathRequestMatcher("/v1/users", "POST")
                         ).permitAll()
                         // H2 console - dev only
                         .requestMatchers(

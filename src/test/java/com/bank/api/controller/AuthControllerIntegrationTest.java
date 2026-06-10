@@ -27,9 +27,9 @@ class AuthControllerIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    private static final String REGISTER_URL = "/api/v1/auth/register";
-    private static final String LOGIN_URL = "/api/v1/auth/login";
-    private static final String ME_URL = "/api/v1/users/me";
+    private static final String REGISTER_URL = "/v1/auth/register";
+    private static final String LOGIN_URL = "/v1/auth/login";
+    private static final String ME_URL = "/v1/users/me";
 
     @Test
     @DisplayName("POST /auth/register with valid details should return 201 and a token")

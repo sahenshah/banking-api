@@ -25,7 +25,7 @@ import java.util.UUID;
  * preventing cross-account transaction access in the URL design itself.
  */
 @RestController
-@RequestMapping("/api/v1/accounts/{accountId}/transactions")
+@RequestMapping("/v1/accounts/{accountId}/transactions")
 public class TransactionController {
 
     private final TransactionService transactionService;
