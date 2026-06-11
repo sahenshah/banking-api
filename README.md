@@ -384,7 +384,7 @@ Integration tests load the full application context and verify the complete HTTP
 | Authentication | Local JWT | OAuth2 / enterprise SSO |
 | Rate limiting | Not implemented | API Gateway (Kong / AWS API Gateway) |
 | User deletion | Hard delete | Soft delete for GDPR and audit requirements |
-
+| Role-based access control | Single ROLE_USER for all users | Multiple roles (CUSTOMER, TELLER, BRANCH_MANAGER, ADMIN) enforced via @PreAuthorize |
 ---
 
 ## H2 Console (Development Only)
