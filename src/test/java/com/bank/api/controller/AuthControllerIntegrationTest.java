@@ -29,7 +29,7 @@ class AuthControllerIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    private static final String REGISTER_URL = "/v1/auth/register";
+    private static final String REGISTER_URL = "/v1/users";
     private static final String LOGIN_URL = "/v1/auth/login";
     private static final String ME_URL = "/v1/users";
 

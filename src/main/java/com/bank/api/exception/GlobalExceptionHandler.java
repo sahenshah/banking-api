@@ -166,11 +166,10 @@ public class GlobalExceptionHandler {
             Exception ex,
             HttpServletRequest request
     ) {
-        // Log the full stack trace internally but never send it to the client
         log.error("Unhandled exception on {}: {}", request.getRequestURI(), ex.getMessage(), ex);
         return ResponseEntity.internalServerError().body(errorBody(
                 HttpStatus.INTERNAL_SERVER_ERROR,
-                "An unexpected error occurred",
+                ex.getMessage(),  // ← temporarily show real error
                 request.getRequestURI(),
                 null
         ));
