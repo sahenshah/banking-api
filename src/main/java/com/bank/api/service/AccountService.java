@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import com.bank.api.dto.request.UpdateAccountRequest;
 
 @Service
 public class AccountService {
@@ -94,5 +95,24 @@ public class AccountService {
             number = String.format("GB%018d", Math.abs(randomPart));
         } while (accountRepository.existsByAccountNumber(number));
         return number;
+    }
+
+    @Transactional
+    public AccountResponse updateAccount(UUID accountId, UUID userId,
+                                         UpdateAccountRequest request) {
+        Account account = findAccountWithOwnershipCheck(accountId, userId);
+
+        if (request.accountType() != null) {
+            account.setAccountType(request.accountType());
+        }
+
+        accountRepository.save(account);
+        return AccountResponse.fromAccount(account);
+    }
+
+    @Transactional
+    public void deleteAccount(UUID accountId, UUID userId) {
+        Account account = findAccountWithOwnershipCheck(accountId, userId);
+        accountRepository.delete(account);
     }
 }
