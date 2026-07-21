@@ -109,6 +109,8 @@ public class Transaction {
 
     public enum TransactionType {
         DEPOSIT,
-        WITHDRAWAL
+        WITHDRAWAL,
+        TRANSFER_IN,
+        TRANSFER_OUT
     }
 }

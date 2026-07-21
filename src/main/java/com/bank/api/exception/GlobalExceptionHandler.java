@@ -108,6 +108,7 @@ public class GlobalExceptionHandler {
             ConflictException ex,
             HttpServletRequest request
     ) {
+        log.warn("Conflict on {}: {}", request.getRequestURI(), ex.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorBody(
                 HttpStatus.CONFLICT,
                 ex.getMessage(),

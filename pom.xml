@@ -140,6 +140,19 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
+        <!--
+            logstash-logback-encoder: structured JSON log output.
+            WHY: Plain text logs are hard to query in a centralised log
+            platform (Splunk/Elastic/Datadog). JSON logs with fields like
+            account_id and correlation_id can be filtered and alerted on
+            directly, instead of grepping message strings.
+        -->
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>7.4</version>
+        </dependency>
+
         <!-- ==================== UTILITY ==================== -->
 
         <!--

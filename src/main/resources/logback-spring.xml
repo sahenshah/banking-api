@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!--
+        DECISION: JSON-structured console logging via logstash-logback-encoder.
+        WHY: Enables shipping to a centralised log platform (Splunk/Elastic/
+        Datadog) where fields like account_id and correlation_id can be
+        queried directly, instead of grepping formatted message strings.
+    -->
+    <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <includeMdcKeyName>correlationId</includeMdcKeyName>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="JSON_CONSOLE" />
+    </root>
+
+    <logger name="com.bank.api" level="DEBUG" />
+    <logger name="org.springframework.security" level="INFO" />
+
+</configuration>
