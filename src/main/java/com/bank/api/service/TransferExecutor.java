@@ -16,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 /**
  * Executes a single transfer attempt inside its own transaction.
  *
@@ -26,6 +28,10 @@ import java.util.UUID;
  * @Transactional would silently do nothing — a classic Spring pitfall.
  * Calling through a separate bean guarantees REQUIRES_NEW actually opens
  * a fresh transaction per retry attempt.
+ *
+ * LOGGING DECISION: see TransferService — IDs/amounts are logged via
+ * StructuredArguments.kv(...) so they become independently queryable
+ * JSON fields, not text embedded in the message.
  */
 @Service
 public class TransferExecutor {
@@ -57,17 +63,19 @@ public class TransferExecutor {
             fromAccount = accountService.loadAccountForOwner(fromAccountId, userId);
         } catch (ResourceNotFoundException ex) {
             log.warn(
-                    "Transfer failed - source account not found. "
-                            + "from_account_id={} to_account_id={} correlation_id={}",
-                    fromAccountId, toAccountId, correlationId
+                    "Transfer failed - source account not found. {} {} {}",
+                    kv("from_account_id", fromAccountId),
+                    kv("to_account_id", toAccountId),
+                    kv("correlation_id", correlationId)
             );
             throw ex;
         }
 
         if (fromAccount.getId().equals(toAccountId)) {
             log.warn(
-                    "Rejected transfer to same account. account_id={} correlation_id={}",
-                    fromAccountId, correlationId
+                    "Rejected transfer to same account. {} {}",
+                    kv("account_id", fromAccountId),
+                    kv("correlation_id", correlationId)
             );
             throw new IllegalArgumentException("Cannot transfer to the same account");
         }
@@ -75,9 +83,10 @@ public class TransferExecutor {
         Account toAccount = accountRepository.findById(toAccountId)
                 .orElseThrow(() -> {
                     log.warn(
-                            "Transfer failed - destination account not found. "
-                                    + "from_account_id={} to_account_id={} correlation_id={}",
-                            fromAccountId, toAccountId, correlationId
+                            "Transfer failed - destination account not found. {} {} {}",
+                            kv("from_account_id", fromAccountId),
+                            kv("to_account_id", toAccountId),
+                            kv("correlation_id", correlationId)
                     );
                     return new ResourceNotFoundException("Destination account not found");
                 });
@@ -86,8 +95,10 @@ public class TransferExecutor {
             fromAccount.withdraw(request.amount());
         } catch (InsufficientFundsException ex) {
             log.warn(
-                    "Transfer failed - insufficient funds. account_id={} amount={} correlation_id={}",
-                    fromAccountId, request.amount(), correlationId
+                    "Transfer failed - insufficient funds. {} {} {}",
+                    kv("account_id", fromAccountId),
+                    kv("amount", request.amount()),
+                    kv("correlation_id", correlationId)
             );
             throw ex;
         }
@@ -116,8 +127,11 @@ public class TransferExecutor {
         transactionRepository.save(incoming);
 
         log.info(
-                "Transfer succeeded. from_account_id={} to_account_id={} amount={} correlation_id={}",
-                fromAccountId, toAccountId, request.amount(), correlationId
+                "Transfer succeeded. {} {} {} {}",
+                kv("from_account_id", fromAccountId),
+                kv("to_account_id", toAccountId),
+                kv("amount", request.amount()),
+                kv("correlation_id", correlationId)
         );
 
         return TransactionResponse.fromTransaction(outgoing);

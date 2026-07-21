@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 /**
  * Handles account-to-account transfers.
  *
@@ -25,6 +27,13 @@ import java.util.UUID;
  * stale, detached entity. After exhausting retries we fail loudly (409)
  * rather than risk a lost update — silent data loss is worse than a
  * client-visible retry.
+ *
+ * LOGGING DECISION: IDs and amounts are logged via
+ * StructuredArguments.kv(...) rather than plain "{}" placeholders. kv()
+ * still renders "key=value" in the formatted message, but ALSO adds the
+ * value as its own field in the JSON log event — so a log platform can
+ * filter/aggregate on account_id or correlation_id directly instead of
+ * grepping the message text.
  */
 @Service
 public class TransferService {
@@ -53,17 +62,23 @@ public class TransferService {
                 if (attempt == MAX_ATTEMPTS) {
                     log.error(
                             "Transfer failed permanently after {} attempts due to optimistic lock contention. "
-                                    + "from_account_id={} to_account_id={} correlation_id={}",
-                            MAX_ATTEMPTS, fromAccountId, request.toAccountId(), correlationId, ex
+                                    + "{} {} {}",
+                            MAX_ATTEMPTS,
+                            kv("from_account_id", fromAccountId),
+                            kv("to_account_id", request.toAccountId()),
+                            kv("correlation_id", correlationId),
+                            ex
                     );
                     throw new ConflictException(
                             "Transfer could not be completed due to concurrent updates to the account. Please retry."
                     );
                 }
                 log.warn(
-                        "Optimistic lock conflict on transfer attempt {}/{}, retrying. "
-                                + "from_account_id={} to_account_id={} correlation_id={}",
-                        attempt, MAX_ATTEMPTS, fromAccountId, request.toAccountId(), correlationId
+                        "Optimistic lock conflict on transfer attempt {}/{}, retrying. {} {} {}",
+                        attempt, MAX_ATTEMPTS,
+                        kv("from_account_id", fromAccountId),
+                        kv("to_account_id", request.toAccountId()),
+                        kv("correlation_id", correlationId)
                 );
             }
         }
